@@ -118,7 +118,7 @@ def _generate_sample_indices(random_state, n_samples, n_samples_bootstrap):
     Private function used to _parallel_build_trees function."""
 
     random_instance = check_random_state(random_state)
-    sample_indices = random_instance.randint(0, n_samples, n_samples_bootstrap)
+    sample_indices = random_instance.choice(list(range(n_samples)), n_samples_bootstrap, replace=False) 
 
     return sample_indices
 
@@ -383,7 +383,7 @@ class BaseForest(MultiOutputMixin, BaseEnsemble, metaclass=ABCMeta):
             # that case. However, for joblib 0.12+ we respect any
             # parallel_backend contexts set at a higher level,
             # since correctness does not rely on using threads.
-            trees = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+            trees, indexTable = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
                              **_joblib_parallel_args(prefer='threads'))(
                 delayed(_parallel_build_trees)(
                     t, self, X, y, sample_weight, i, len(trees),
@@ -393,7 +393,8 @@ class BaseForest(MultiOutputMixin, BaseEnsemble, metaclass=ABCMeta):
 
             # Collect newly grown trees
             self.estimators_.extend(trees)
-
+            self.indexTable_.extend(indexTable)
+            
         if self.oob_score:
             self._set_oob_score(X, y)
 
